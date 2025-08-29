@@ -187,7 +187,11 @@
 	async function fetchData(nickname) {
 	  try {
 		const response = await fetch("https://script.google.com/macros/s/AKfycbwPgC_iLMmZFxmlCgGkqOGWT3u0uAKoC8m2cnT7RiJfp_zJyCK0e7dMhtE0ZZaRneQe/exec");
-		const records = await response.json();
+		const data = await response.json();
+
+		const transactions = data.transactions;
+		const shares = data.shares;
+		const loans = data.loans;
 
 		const memberData = records.filter(r => r.NickName.toLowerCase() === nickname);
 		document.getElementById("spinner").style.display = "none";
