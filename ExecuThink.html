@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member Interest Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+    }
+
+    .container, #loginScreen {
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    h1, h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    input[type="text"], input[type="password"] {
+      padding: 10px;
+      width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px;
+      width: 100%;
+      background: #0078D4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+      }
+
+      th {
+        display: none;
+      }
+
+      td {
+        border: none;
+        padding: 8px 0;
+      }
+    }
+
+    .container {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <h2>🔐 Member Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="checkLogin()">Login</button>
+    <p id="loginError" style="color:red; margin-top:10px;"></p>
+  </div>
+
+  <!-- Dashboard Container -->
+  <div class="container">
+    <h1>📊 Member Interest Dashboard</h1>
+
+    <div class="section">
+      <label for="nickname">🔍 Search NickName:</label>
+      <input type="text" id="nickname" placeholder="Enter NickName..." oninput="filterData()" />
+    </div>
+
+    <div class="section" id="memberSummary">
+      <h2>💰 Interest Share</h2>
+      <p><strong>50% (All Members):</strong> ₱<span id="shareAll">0.00</span></p>
+      <p><strong>50% (Borrowers Only):</strong> ₱<span id="shareBorrowers">0.00</span></p>
+    </div>
+
+    <div class="section">
+      <h2>📋 Loan Summary</h2>
+      <table id="loanTable">
+        <thead>
+          <tr>
+            <th>Loan Batch</th>
+            <th>Loan Amount</th>
+            <th>Interest</th>
+            <th>Payment</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>📈 Transaction History</h2>
+      <table id="transactionTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Savings</th>
+            <th>Loan</th>
+            <th>Interest</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const users = {
+      "kassandra": "executhink123",
+      "member1": "groupaccess456"
+    };
+
+    function checkLogin() {
+      const u = document.getElementById("username").value.trim().toLowerCase();
+      const p = document.getElementById("password").value.trim();
+
+      if (users[u] && users[u] === p) {
+        document.getElementById("loginScreen").style.display = "none";
+        document.querySelector(".container").style.display = "block";
+      } else {
+        document.getElementById("loginError").textContent = "Invalid username or password.";
+      }
+    }
+
+    async function fetchData(nickname) {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbykWJWlIcZDff2zTdLQFKUS3Zzkq44WXfQ6CaP-jlQ/dev");
+      const records = await response.json();
+
+      const memberData = records.filter(r => r.NickName.toLowerCase() === nickname.toLowerCase());
+      if (memberData.length === 0) return;
+
+      const savingsTotal = memberData.reduce((sum, r) => sum + Number(r.Savings || 0), 0);
+      const shareAll = (savingsTotal / getTotalSavings(records)) * (0.5 * getTotalInterest(records));
+      const shareBorrowers = hasLoan(memberData)
+        ? (savingsTotal / getBorrowerSavings(records)) * (0.5 * getTotalInterest(records))
+        : 0;
+
+      document.getElementById("shareAll").textContent = shareAll.toFixed(2);
+      document.getElementById("shareBorrowers").textContent = shareBorrowers.toFixed(2);
+
+      populateTables(memberData);
+    }
+
+    function getTotalSavings(data) {
+      return data.reduce((sum, r) => sum + Number(r.Savings || 0), 0);
+    }
+
+    function getTotalInterest(data) {
+      return data.reduce((sum, r) => sum + Number(r.Interest || 0), 0);
+    }
+
+    function getBorrowerSavings(data) {
+      return data.filter(r => Number(r.Interest) > 0)
+                 .reduce((sum, r) => sum + Number(r.Savings || 0), 0);
+    }
+
+    function hasLoan(memberData) {
+      return memberData.some(r => Number(r.Interest) > 0);
+    }
+
+    function populateTables(memberData) {
+      const loanBody = document.querySelector("#loanTable tbody");
+      loanBody.innerHTML = "";
+      const batches = [...new Set(memberData.map(r => r["Loan Batch"]))];
+      batches.forEach(batch => {
+        const batchRows = memberData.filter(r => r["Loan Batch"] === batch);
+        const loan = batchRows.reduce((sum, r) => sum + Number(r.Loan || 0), 0);
+        const interest = batchRows.reduce((sum, r) => sum + Number(r.Interest || 0), 0);
+        const payment = batchRows.reduce((sum, r) => sum + Number(r.Payment || 0), 0);
+        const status = payment >= loan ? "Fully Paid" : "Partially Paid";
+
+        loanBody.innerHTML += `<tr>
+          <td data-label="Loan Batch">${batch}</td>
+          <td data-label="Loan Amount">₱${loan}</td>
+          <td data-label="Interest">₱${interest}</td>
+          <td data-label="Payment">₱${payment}</td>
+          <td data-label="Status">${status}</td>
+        </tr>`;
+      });
+
+      const transBody = document.querySelector("#transactionTable tbody");
+      transBody.innerHTML = "";
+      memberData.forEach(tx => {
+        transBody.innerHTML += `<tr>
+          <td data-label="Date">${tx.Date}</td>
+          <td data-label="Savings">₱${tx.Savings}</td>
+          <td data-label="Loan">₱${tx.Loan}</td>
+          <td data-label="Interest">₱${tx.Interest}</td>
+          <td data-label="Payment">₱${tx.Payment}</td>
+        </tr>`;
+      });
+    }
+
+    function filterData() {
+      const nickname = document.getElementById("nickname").value;
+      if (nickname) fetchData(nickname);
+    }
+  </script>
+</body>
+</html>
