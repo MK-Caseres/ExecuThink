@@ -133,21 +133,20 @@
       <p><strong>50% (Borrowers Only):</strong> ₱<span id="shareBorrowers">0.00</span></p>
     </div>
 
-    <div class="section">
-      <h2>📋 Loan Summary</h2>
-      <table id="loanTable">
-        <thead>
-          <tr>
-            <th>Loan Batch</th>
-            <th>Loan Amount</th>
-            <th>Interest</th>
-            <th>Payment</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+	<div class="section">
+	  <h2>💼 Active Loans</h2>
+	  <table id="activeLoansTable">
+		<thead>
+		  <tr>
+			<th>Loan Batch</th>
+			<th>Loan Amount</th>
+			<th>Release Date</th>
+			<th>Remaining Loan</th>
+		  </tr>
+		</thead>
+		<tbody></tbody>
+	  </table>
+	</div>
 
     <div class="section">
       <h2>📈 Transaction History</h2>
@@ -193,7 +192,7 @@
 		const shares = data.shares;
 		const loans = data.loans;
 
-		const memberData = records.filter(r => r.NickName.toLowerCase() === nickname);
+		const memberData = transactions.filter(r => r.NickName.toLowerCase() === nickname);
 		document.getElementById("spinner").style.display = "none";
 
 		if (memberData.length === 0) {
@@ -209,15 +208,28 @@
 
 		// Continue with your existing logic...
 		const savingsTotal = memberData.reduce((sum, r) => sum + Number(r.Savings || 0), 0);
-		const shareAll = (savingsTotal / getTotalSavings(records)) * (0.5 * getTotalInterest(records));
+		const shareAll = (savingsTotal / getTotalSavings(transactions)) * (0.5 * getTotalInterest(transactions));
 		const shareBorrowers = hasLoan(memberData)
-		  ? (savingsTotal / getBorrowerSavings(records)) * (0.5 * getTotalInterest(records))
+		  ? (savingsTotal / getBorrowerSavings(transactions)) * (0.5 * getTotalInterest(transactions))
 		  : 0;
 
 		document.getElementById("shareAll").textContent = shareAll.toFixed(2);
 		document.getElementById("shareBorrowers").textContent = shareBorrowers.toFixed(2);
 
 		populateTables(memberData);
+		
+		const activeLoanBody = document.querySelector("#activeLoansTable tbody");
+		activeLoanBody.innerHTML = "";
+
+		const memberLoans = loans.filter(r => r.NickName.toLowerCase() === nickname);
+		memberLoans.forEach(loan => {
+		  activeLoanBody.innerHTML += `<tr>
+			<td data-label="Loan Batch">${loan["Loan Batch"]}</td>
+			<td data-label="Loan Amount">₱${loan["Loan"]}</td>
+			<td data-label="Release Date">${loan["Release Date"]}</td>
+			<td data-label="Remaining Loan">₱${loan["Remaining Loan"]}</td>
+		  </tr>`;
+		});
 	  } catch (error) {
 		document.getElementById("spinner").style.display = "none";
 		document.getElementById("statusMessage").textContent = "Error loading data. Please try again.";
