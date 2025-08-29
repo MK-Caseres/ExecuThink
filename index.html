@@ -108,12 +108,13 @@
   <!-- Dashboard Container -->
   <div class="container">
     <h1>📊 Member Interest Dashboard</h1>
-
-    <div class="section">
+	
+	<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px;">
       <label for="nickname">🔍 Search NickName:</label>
-      <input type="text" id="nickname" placeholder="Enter NickName..." />
-	  <button onclick="filterData()" style="margin-top:10px; padding:10px 20px; background:#0078D4; color:white; border:none; border-radius:4px;">Search</button>
+	  <input type="text" id="nickname" placeholder="Enter NickName..." style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" />
+	  <button onclick="filterData()" style="padding: 10px 20px; background: #0078D4; color: white; border: none; border-radius: 4px;">Search</button>
 	</div>
+
 	
 	<div id="statusMessage" style="margin-top:10px; font-style:italic; color:#555;"></div>
 		<div id="spinner" style="display:none; margin-top:10px;">
